@@ -365,8 +365,8 @@ class AM_PlayerPawn : DoomPlayer
 		// dip weapon based on jumping/landing:
 		if (am_JumplandDuration != 0)
 		{
-			double prevdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_prevJumpLandTime, 0, 1.2, 0.8, 0.0) * 10;
-			double curdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_JumpLandTime, 0, 1.2, 0.8, 0.0) * 10;
+			double prevdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_prevJumpLandTime, 0, 1.2, 0.8, 0.0) * am_landViewDipDist;
+			double curdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_JumpLandTime, 0, 1.2, 0.8, 0.0) * am_landViewDipDist;
 			bob.y += prevdip + (curdip - prevdip) * ticFrac;
 		}
 
