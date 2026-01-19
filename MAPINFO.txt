@@ -1,0 +1,4 @@
+GameInfo
+{
+	PlayerClasses = "AM_PlayerPawn"
+}

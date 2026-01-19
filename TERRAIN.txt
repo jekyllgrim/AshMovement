@@ -1,0 +1,11 @@
+// [AA] Default terrain. This is used to
+// define generic sounds for walking on
+// the ground. More terrains can be defined
+// for various floor textures (see the
+// TERRAIN page on ZDoom Wiki).
+Terrain AM_HardSurface
+{
+	StepSounds "am/footstep/hard"
+}
+
+DefaultTerrain AM_HardSurface

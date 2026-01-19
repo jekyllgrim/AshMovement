@@ -1,0 +1,46 @@
+// [AA] This contains example sound definitions for
+// default footstep sounds and a new *land sound
+// (meant to be different from default Doom's grunt).
+// Since this library doesn't include sounds, these
+// don't link to anything. You're meant to provide
+// your own sounds (and paths, if needed).
+
+// Footsteps. These are default; more can be added
+// via TERRAIN:
+am/footstep/hard1	"sounds/footsteps/fstep_hard1.wav"
+am/footstep/hard2	"sounds/footsteps/fstep_hard2.wav"
+am/footstep/hard3	"sounds/footsteps/fstep_hard3.wav"
+am/footstep/hard4	"sounds/footsteps/fstep_hard4.wav"
+am/footstep/hard5	"sounds/footsteps/fstep_hard5.wav"
+am/footstep/hard6	"sounds/footsteps/fstep_hard6.wav"
+$random am/footstep/hard
+{
+	am/footstep/hard1
+	am/footstep/hard2
+	am/footstep/hard3
+	am/footstep/hard4
+	am/footstep/hard5
+	am/footstep/hard6
+}
+$limit am/footstep/hard 0
+
+// Landing on the ground sound. In vanilla Doom, it's
+// identical to *grunt; it's recommended to use a
+// separate sound:
+am/land/ground	"sounds/footsteps/land_ground.wav"
+$playeralias player male	*land			am/land/ground
+$playeralias player female	*land			am/land/ground
+$playeralias player other	*land			am/land/ground
+
+// Landing in liquid sound - used when landing on
+// TERRAIN-defined liquid OR when landing into
+// 3D-floor water:
+am/land/liquid	"sounds/footsteps/land_liquid.wav"
+$playeralias player male	*landliquid		am/land/liquid
+$playeralias player female	*landliquid		am/land/liquid
+$playeralias player other	*landliquid		am/land/liquid
+
+// Note: when landing in TERRAIN water, if that TERRAIN
+// has an associated Splash, *landliquid will not be
+// played, since Splash actors are presumed to make
+// their own sounds (see AM_LandedInLiquid() function).
