@@ -37,5 +37,5 @@ The following properties are exposed in the AM_PlayerPawn class for easy adjustm
 * AM_PlayerPawn.MaxViewBobRage (default: 5.0) - maximum vertical range of view bobbing, i.e. how far the camera can dip down when moving (does not affect weapon bobbing)
 * AM_PlayerPawn.ViewBobAngleFactor (default: 0.3) - affects angular (side-to-side) view bobbing. This is a multiplier from MaxViewRange, not an absolute value.
 * AM_PlayerPawn.LandingViewDipDistance (default: 10.0) - how far the camera can move downward when landing
-* * AM_PlayerPawn.VerticalWeaponBobRange (default: 2.3) - how far the weapon can move up-down when bobbing
+* AM_PlayerPawn.VerticalWeaponBobRange (default: 2.3) - how far the weapon can move up-down when bobbing
 * AM_PlayerPawn.HorizontalWeaponBobRange (default: 7.0) - how far the weapon can move left/right when bobbing
