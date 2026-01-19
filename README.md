@@ -5,6 +5,8 @@ This is not a gameplay mod (although it can be used as such) but rather a resour
 
 **LICENSED UNDER GPLv3** Can be used by anyone for any purpose as long as the use [complies with the license](https://www.gnu.org/licenses/gpl-3.0.html).
 
+Compatible with [UZDoom](https://github.com/UZDoom/UZDoom/releases)
+
 ## Features
 ### Movement
 Overall, the movement aims to be much snappier and controllable, allowing much better platforming.
@@ -39,3 +41,15 @@ The following properties are exposed in the AM_PlayerPawn class for easy adjustm
 * AM_PlayerPawn.LandingViewDipDistance (default: 10.0) - how far the camera can move downward when landing
 * AM_PlayerPawn.VerticalWeaponBobRange (default: 2.3) - how far the weapon can move up-down when bobbing
 * AM_PlayerPawn.HorizontalWeaponBobRange (default: 7.0) - how far the weapon can move left/right when bobbing
+
+## How to use
+### For testing purposes
+* [Download the repository](https://github.com/jekyllgrim/AshMovement/archive/refs/heads/main.zip)
+* Run the downloaded file as a mod in Doom (it'll replace the existing player class)
+### In your project
+* [Download the repository](https://github.com/jekyllgrim/AshMovement/archive/refs/heads/main.zip)
+* Copy the AshScript folder into your project and `#include` the files in it via your core `zscript` file
+* Modify the AM_PlayerPawn class as desired. Alternatively, create a new class based on it.
+  * If you don't want any DoomPlayer features, change AM_PlayerPawn's parent class from DoomPlayer to PlayerPawn (or to another desired class, like one from Heretic or Hexen)
+* Copy TERRAIN and SNDINFO definitions and then add sounds for them (sounds are NOT included with this resource)
+* If you plan to release your project anywhere, it'll have to be under GPLv3 to comply
