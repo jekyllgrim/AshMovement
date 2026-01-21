@@ -2,6 +2,8 @@ class AM_PlayerPawn : DoomPlayer
 {
 	const AMC_ACCELFAC = 0.2;
 
+	protected bool am_deathrolled;
+
 	protected uint am_coyotetime;
 	protected uint am_underwaterTime;
 	protected double am_prevbobphase;
@@ -136,6 +138,13 @@ class AM_PlayerPawn : DoomPlayer
 		Super.PlayerThink();
 
 		let player = self.player;
+
+		// [AA] Undo rolling applied in DeathThink:
+		if (health > 0 && am_deathrolled)
+		{
+			A_SetViewRoll(0, SPF_INTERPOLATE);
+			am_deathrolled = false;
+		}
 
 		// [AA] Movement should be predicted:
 		
@@ -560,7 +569,7 @@ class AM_PlayerPawn : DoomPlayer
 			// like in vanilla:
 			if (zvel < -self.player.mo.GruntSpeed)
 			{
-				A_StartSoundIfNotSame("*land", "*grunt", CHAN_AUTO, CHANF_NORUMBLE);
+				A_StartSoundIfNotSame("*land", "*grunt", CHAN_AUTO);
 			}
 			player.jumptics = clamp(int(round(abs(zvel))), 0, 12);
 			AM_SetJumpLandTimer( int(clamp(abs(zvel), 0, 8)) );
@@ -729,13 +738,14 @@ class AM_PlayerPawn : DoomPlayer
 		// [AA] Roll view upon death:
 		let player = self.player;
 		A_SetViewRoll(AM_Utils.LinearMap(player.viewheight, self.viewheight, 6, 0, 90), SPF_INTERPOLATE);
+		am_deathrolled = true;
 	}
 
-	// [AA] Undo rolled view if resurrected:
-	override void OnRevive()
-	{
-		A_SetViewRoll(0, SPF_INTERPOLATE);
-	}
+	// [AA] Will uncomment come 4.15.1
+	//override void OnRevive()
+	//{
+	//	A_SetViewRoll(0, SPF_INTERPOLATE);
+	//}
 
 	virtual Vector2 AM_ApplyAirControl(Vector2 wishvel)
 	{
