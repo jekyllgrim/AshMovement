@@ -30,19 +30,19 @@ class AM_PlayerPawn : DoomPlayer
 	protected double am_prevVelZ;
 
 	int am_maxcoyotetime;
-	property MaxCoyoteTime : am_maxcoyotetime;
 	double am_maxBobFreq;
-	property MaxBobFrequency : am_maxBobFreq;
-	double am_maxViewBobRange;
-	property MaxViewBobRage : am_maxViewBobRange;
-	double am_viewBobAngMul;
-	property ViewBobAngleFactor : am_viewBobAngMul;
 	double am_landViewDipDist;
-	property LandingViewDipDistance : am_landViewDipDist;
+	double am_viewBobRangeVert;
+	double am_viewBobrangeHorz;
 	double am_weapBobRangeHorz;
 	double am_weapBobRangeVert;
-	property HorizontalWeaponBobRange : am_weapBobRangeHorz;
-	property VerticalWeaponBobRange : am_weapBobRangeVert;
+	property MaxCoyoteTime				: am_maxcoyotetime;
+	property MaxBobFrequency			: am_maxBobFreq;
+	property LandingViewDipDistance 	: am_landViewDipDist;
+	property VerticalViewBobRange		: am_viewBobRangeVert;
+	property HorizontalViewBobRange		: am_viewBobrangeHorz;
+	property HorizontalWeaponBobRange 	: am_weapBobRangeHorz;
+	property VerticalWeaponBobRange		: am_weapBobRangeVert;
 
 	Default
 	{
@@ -57,15 +57,15 @@ class AM_PlayerPawn : DoomPlayer
 		// possible speed. Affects both view and weapon bob. Doesn't affect
 		// the range of bobbing:
 		AM_PlayerPawn.MaxBobFrequency 30.0;
-		// Maximum vertical range of view (not weapon) bobbing. This is how far
-		// the camera can dip down:
-		AM_PlayerPawn.MaxViewBobRage 5.0;
-		// Angular (side-to-side) view bobbing. This is a multiplier of
-		// vertical bob value, not a separate value:
-		AM_PlayerPawn.ViewBobAngleFactor 0.3;
+		// Maximum vertical (downward) range of view (not weapon) bobbing:
+		AM_PlayerPawn.VerticalViewBobRange 5.0;
+		// Maximum range of horizontal (side-to-side) view bobbing:
+		AM_PlayerPawn.HorizontalViewBobRange 0.3;
 		// How far the camera can dip down when landing on the ground:
 		AM_PlayerPawn.LandingViewDipDistance 10.0;
+		// Maximum horizontal range of weapon bobbing:
 		AM_PlayerPawn.HorizontalWeaponBobRange 7.0;
+		// Maximum vertical range of weapon bobbing:
 		AM_PlayerPawn.VerticalWeaponBobRange 2.3;
 	}
 
@@ -503,7 +503,7 @@ class AM_PlayerPawn : DoomPlayer
 			double maxvel = AM_GetBaseRunVel();
 			if (waterlevel) hvel *= 0.7;
 			bobfreq = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_maxBobFreq, true);
-			bobrange = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_maxViewBobRange, true);
+			bobrange = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_viewBobRangeVert, true);
 		}
 		else
 		{
@@ -519,7 +519,7 @@ class AM_PlayerPawn : DoomPlayer
 		// [AA] Slight vertical bobbing and even slighter yaw bobbing,
 		// with range and speed based on velocity:
 		bob = sin(am_bobphase) * bobrange;
-		A_SetViewAngle(sin(am_bobphase*0.5) * am_viewBobAngMul, SPF_INTERPOLATE);
+		A_SetViewAngle(sin(am_bobphase*0.5) * am_viewBobrangeHorz, SPF_INTERPOLATE);
 
 		// [AA] Play footstep sounds at the end of the bob:
 		if (!waterlevel && cos(am_prevbobphase) > 0 && cos(am_bobphase) <= 0)
