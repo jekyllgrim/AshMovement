@@ -30,19 +30,38 @@ class AM_PlayerPawn : DoomPlayer
 	protected double am_prevVelZ;
 
 	int am_maxcoyotetime;
+	property MaxCoyoteTime				: am_maxcoyotetime;
+
 	double am_maxBobFreq;
 	double am_landViewDipDist;
 	double am_viewBobRangeVert;
 	double am_viewBobrangeHorz;
 	double am_weapBobRangeHorz;
 	double am_weapBobRangeVert;
-	property MaxCoyoteTime				: am_maxcoyotetime;
 	property MaxBobFrequency			: am_maxBobFreq;
 	property LandingViewDipDistance 	: am_landViewDipDist;
 	property VerticalViewBobRange		: am_viewBobRangeVert;
 	property HorizontalViewBobRange		: am_viewBobrangeHorz;
 	property HorizontalWeaponBobRange 	: am_weapBobRangeHorz;
 	property VerticalWeaponBobRange		: am_weapBobRangeVert;
+
+	double am_weapLeanPitchRangeMin;
+	double am_weapLeanPitchRangeMax;
+	double am_weapLeanYawRange;
+	double am_weapLeanDistRange;
+	property WeaponLeanPitchRangeMin	: am_weapLeanPitchRangeMin;
+	property WeaponLeanPitchRangeMax	: am_weapLeanPitchRangeMax;
+	property WeaponLeanYawRange			: am_weapLeanYawRange;
+	property WeaponLeanDistRange		: am_weapLeanDistRange;
+
+	double am_weap3DLeanPitchRangeMin;
+	double am_weap3DLeanPitchRangeMax;
+	double am_weap3DLeanYawRange;
+	double am_weap3DLeanDistRange;
+	property Weapon3DLeanPitchRangeMin	: am_weap3DLeanPitchRangeMin;
+	property Weapon3DLeanPitchRangeMax	: am_weap3DLeanPitchRangeMax;
+	property Weapon3DLeanYawRange		: am_weap3DLeanYawRange;
+	property Weapon3DLeanDistRange		: am_weap3DLeanDistRange;
 
 	Default
 	{
@@ -53,20 +72,50 @@ class AM_PlayerPawn : DoomPlayer
 		// Duration of coyote time in tics (starts counting down as soon as
 		// player crosses a ledge):
 		AM_PlayerPawn.MaxCoyoteTime 10;
+
 		// Maximum frequency of bobbing, achievable when running at maximum
 		// possible speed. Affects both view and weapon bob. Doesn't affect
 		// the range of bobbing:
 		AM_PlayerPawn.MaxBobFrequency 30.0;
+
 		// Maximum vertical (downward) range of view (not weapon) bobbing:
 		AM_PlayerPawn.VerticalViewBobRange 5.0;
 		// Maximum range of horizontal (side-to-side) view bobbing:
 		AM_PlayerPawn.HorizontalViewBobRange 0.3;
 		// How far the camera can dip down when landing on the ground:
 		AM_PlayerPawn.LandingViewDipDistance 10.0;
+
 		// Maximum horizontal range of weapon bobbing:
 		AM_PlayerPawn.HorizontalWeaponBobRange 7.0;
 		// Maximum vertical range of weapon bobbing:
 		AM_PlayerPawn.VerticalWeaponBobRange 2.3;
+
+		// SPRITE WEAPON BOBBING:
+
+		// How far the weapon can be pushed UP by LOWERING camera
+		// (0.0 by default to avoid potential sprite cutoffs):
+		AM_PlayerPawn.WeaponLeanPitchRangeMin 0.0; 		// NEGATIVE = HIGHER
+		// How far the weapon can be pushed DOWN by RAISING camera:
+		AM_PlayerPawn.WeaponLeanPitchRangeMax 14.0;		// POSITIVE = LOWER
+		// How far the weapon sprite can be pushed left/right
+		// by rotating the camera:
+		AM_PlayerPawn.WeaponLeanYawRange 14.0;
+		// How far the weapon can be pushed down by approaching
+		// a solid actor / wall:
+		AM_PlayerPawn.WeaponLeanDistRange 34.0;
+
+		// 3D WEAPON BOBBING:
+
+		// How how far the weapon can pitch UP by LOWERING camera:
+		AM_PlayerPawn.Weapon3DLeanPitchRangeMin -6.0; 		// NEGATIVE = HIGHER
+		// How far the weapon can pitch DOWN by RAISING camera:
+		AM_PlayerPawn.Weapon3DLeanPitchRangeMax 6.0;		// POSITIVE = LOWER
+		// How far the weapon can roll sideways by
+		// rotating the camera:
+		AM_PlayerPawn.Weapon3DLeanYawRange 9.0;
+		// How far the weapon move towards the screen
+		// by approaching a solid actor / wall:
+		AM_PlayerPawn.Weapon3DLeanDistRange 34.0;
 	}
 
 	clearscope bool AM_IsPlayerFlying()
@@ -379,11 +428,29 @@ class AM_PlayerPawn : DoomPlayer
 		let [bob, ipitch, iyaw, idist, idip] = AM_CalculateBobValues(ticfrac);
 		
 		// pitch weapon based on pitch:
-		double raise = AM_Utils.LinearMap(ipitch, 90, -90, 6, -6, true);
+		double raise, yaw, depth;
+		
+		if (am_weap3DLeanPitchRangeMin < 0 || am_weap3DLeanPitchRangeMax > 0)
+		{
+			raise += AM_Utils.LinearMap(ipitch, 
+				am_weap3DLeanPitchRangeMin < 0? 90 : 0,
+				am_weap3DLeanPitchRangeMax > 0? -90 : 0,
+				am_weap3DLeanPitchRangeMax,
+				am_weap3DLeanPitchRangeMin,
+				true
+			);
+		}
 		// roll weapon based on yaw:
-		double yaw = AM_Utils.LinearMap(iyaw, 2000, -2000, -9, 9, true);
+		if (am_weap3DLeanYawRange > 0)
+		{
+			yaw = AM_Utils.LinearMap(iyaw, 2000, -2000, -am_weap3DLeanYawRange, am_weap3DLeanYawRange, true);
+		}
+
 		// push weapon to screen based on distance to obstacle:
-		double depth = AM_Utils.LinearMap(idist, radius*2, 0, 0, 34, true);
+		if (am_weap3DLeanDistRange > 0)
+		{
+			depth = AM_Utils.LinearMap(idist, radius*2, 0, 0, am_weap3DLeanDistRange, true);
+		}
 		// dip weapon based on jumping/landing:
 		bob.y += idip;
 
@@ -398,13 +465,28 @@ class AM_PlayerPawn : DoomPlayer
 		let [bob, ipitch, iyaw, idist, idip] = AM_CalculateBobValues(ticfrac);
 
 		// dip weapon based on camera pitch (raised camera - dip weapon):
-		bob.y += AM_Utils.LinearMap(ipitch, 0, -90, 0, 14, true);
+		if (am_weapLeanPitchRangeMin < 0 || am_weapLeanPitchRangeMax > 0)
+		{
+			bob.y += AM_Utils.LinearMap(ipitch, 
+				am_weapLeanPitchRangeMin < 0? 90 : 0,
+				am_weapLeanPitchRangeMax > 0? -90 : 0,
+				am_weapLeanPitchRangeMin,
+				am_weapLeanPitchRangeMax,
+				true
+			);
+		}
 
 		// push weapon left/right when changing angle:
-		bob.x += AM_Utils.LinearMap(iyaw, 2000, -2000, 14, -14, true);
+		if (am_weapLeanYawRange > 0)
+		{
+			bob.x += AM_Utils.LinearMap(iyaw, 2000, -2000, am_weapLeanYawRange, -am_weapLeanYawRange, true);
+		}
 
 		// dip weapon based on obstacle in front of us:
-		bob.y += AM_Utils.LinearMap(idist, radius*2, 0, 0, 34, true);
+		if (am_weapLeanDistRange > 0)
+		{
+			bob.y += AM_Utils.LinearMap(idist, radius*2, 0, 0, am_weapLeanDistRange, true);
+		}
 
 		// dip weapon based on jumping/landing:
 		bob.y += idip;
