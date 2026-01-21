@@ -314,11 +314,15 @@ class AM_PlayerPawn : DoomPlayer
 		return forward, side;
 	}
 
-	override Vector2 BobWeapon (double ticfrac)
+	// [AA] Calculates interpolated values and returns:
+	// - movement bob
+	// - interpolated pitch
+	// - interpolated yaw
+	// - interpolated distance to obstacle
+	// - interpolated jump/land camera dip
+	clearscope Vector2, double, double, double, double AM_CalculateBobValues(double ticfrac)
 	{
 		let player = self.player;
-		if (!player || !player.readyweapon) return (0, 0);
-
 		Vector2 bob, bob1, bob2, bobrange;
 		// [AA] Movement-based bobbing:
 		
@@ -350,25 +354,60 @@ class AM_PlayerPawn : DoomPlayer
 		}
 		bob = (bob1.x + (bob2.x - bob1.x)*ticfrac, bob.y + (bob2.y - bob1.y)*ticfrac);
 
-		// dip weapon based on camera pitch (raised camera - dip weapon):
-		double ipitch = am_prevPitch + (am_curPitch - am_prevPitch) * ticFrac;
-		bob.y += AM_Utils.LinearMap(ipitch, 0, -90, 0, 14, true);
+		double ipitch, iyaw, idist, idip;
 
-		// push weapon left/right when changing angle:
-		double iyaw = am_prevIntrYaw + (am_intrYaw - am_prevIntrYaw) * ticFrac;
-		bob.x += AM_Utils.LinearMap(iyaw, 2000, -2000, 14, -14, true);
-
-		// dip weapon based on obstacle in front of us:
-		double iDist = am_prevDistToObst + (am_distToObst - am_prevDistToObst) * ticfrac;
-		bob.y += AM_Utils.LinearMap(iDist, radius*2, 0, 0, 34, true);
+		ipitch = am_prevPitch + (am_curPitch - am_prevPitch) * ticFrac;
+		iyaw = am_prevIntrYaw + (am_intrYaw - am_prevIntrYaw) * ticFrac;
+		iDist = am_prevDistToObst + (am_distToObst - am_prevDistToObst) * ticfrac;
 
 		// dip weapon based on jumping/landing:
 		if (am_JumplandDuration != 0)
 		{
 			double prevdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_prevJumpLandTime, 0, 1.2, 0.8, 0.0) * am_landViewDipDist;
 			double curdip = AM_Utils.CubicBezierPulse(am_JumplandDuration, time: am_JumpLandTime, 0, 1.2, 0.8, 0.0) * am_landViewDipDist;
-			bob.y += prevdip + (curdip - prevdip) * ticFrac;
+			idip = prevdip + (curdip - prevdip) * ticFrac;
 		}
+
+		return bob, ipitch, iyaw, idist, idip;
+	}
+
+	override Vector3, Vector3 BobWeapon3D (double ticfrac)
+	{
+		let player = self.player;
+		if (!player || !player.readyweapon) return (0,0,0), (0,0,0);
+
+		let [bob, ipitch, iyaw, idist, idip] = AM_CalculateBobValues(ticfrac);
+		
+		// pitch weapon based on pitch:
+		double raise = AM_Utils.LinearMap(ipitch, 90, -90, 6, -6, true);
+		// roll weapon based on yaw:
+		double yaw = AM_Utils.LinearMap(iyaw, 2000, -2000, -9, 9, true);
+		// push weapon to screen based on distance to obstacle:
+		double depth = AM_Utils.LinearMap(idist, radius*2, 0, 0, 34, true);
+		// dip weapon based on jumping/landing:
+		bob.y += idip;
+
+		return (0, raise, depth), (bob.x / 4, bob.y / -4, yaw);
+	}
+
+	override Vector2 BobWeapon (double ticfrac)
+	{
+		let player = self.player;
+		if (!player || !player.readyweapon) return (0, 0);
+
+		let [bob, ipitch, iyaw, idist, idip] = AM_CalculateBobValues(ticfrac);
+
+		// dip weapon based on camera pitch (raised camera - dip weapon):
+		bob.y += AM_Utils.LinearMap(ipitch, 0, -90, 0, 14, true);
+
+		// push weapon left/right when changing angle:
+		bob.x += AM_Utils.LinearMap(iyaw, 2000, -2000, 14, -14, true);
+
+		// dip weapon based on obstacle in front of us:
+		bob.y += AM_Utils.LinearMap(idist, radius*2, 0, 0, 34, true);
+
+		// dip weapon based on jumping/landing:
+		bob.y += idip;
 
 		return bob;
 	}
