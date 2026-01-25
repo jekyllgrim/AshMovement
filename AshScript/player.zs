@@ -391,7 +391,14 @@ class AM_PlayerPawn : DoomPlayer
 		double bobdamp = am_prevWeapBobDamp + (am_weapBobDamp - am_prevWeapBobDamp) * ticfrac;
 		bobrange.x = AM_Utils.LinearMap(self.vel.xy.Length(), 0, AM_GetBaseRunVel(), 0, am_weapBobRangeHorz) * bobdamp;
 		bobrange.y = AM_Utils.LinearMap(self.vel.xy.Length(), 0, AM_GetBaseRunVel(), 0, am_weapBobRangeVert) * bobdamp;
+		// deeper downward movement when underwater:
 		if (waterlevel) bobrange.y *= 1.8;
+		// multiply by weapon-specific bobranges:
+		if (player.readyweapon)
+		{
+			bobrange.x *= player.readyweapon.BobRangeX;
+			bobrange.y *= player.readyweapon.BobRangeY;
+		}
 
 		double bobphase;
 		// Get weapon bob for previous and curernt tic and lerp,
@@ -400,7 +407,10 @@ class AM_PlayerPawn : DoomPlayer
 		{
 			bobphase = i == 0? am_prevbobphase : am_bobphase;
 			bob.x = (cos(bobphase*0.5)) * -bobrange.x;
-			bob.y = (2 + sin(bobphase)) * bobrange.y;
+			// Faster downward movement to better convey
+			// the weight of the weapon:
+			double t = (sin(bobphase) + 1.0) * 0.5;
+			bob.y = (t ** 2.0) * bobrange.y;
 			if (i == 0)
 			{
 				bob1 = bob;
@@ -410,7 +420,8 @@ class AM_PlayerPawn : DoomPlayer
 				bob2 = bob;
 			}
 		}
-		bob = (bob1.x + (bob2.x - bob1.x)*ticfrac, bob.y + (bob2.y - bob1.y)*ticfrac);
+		bob.x = bob1.x + (bob2.x - bob1.x)*ticfrac;
+		bob.y = bob1.y + (bob2.y - bob1.y)*ticfrac;
 
 		double ipitch, iyaw, idist, idip;
 
