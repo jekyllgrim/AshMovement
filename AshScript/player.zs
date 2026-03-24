@@ -285,7 +285,7 @@ class AM_PlayerPawn : DoomPlayer
 			// make player fight against friction. The only difference is
 			// that we're not calling Bob() since we're handling view bob
 			// in a fully custom manner:
-			if (player.onground && !waterlevel && !bNOGRAVITY && friction != ORIG_FRICTION)
+			if (player.onground && !waterlevel && !bNOGRAVITY && !(friction ~== ORIG_FRICTION))
 			{
 				double forwardmove = fm * movefactor * (35 / TICRATE);
 				if (forwardmove)
