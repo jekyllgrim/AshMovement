@@ -1,7 +1,5 @@
 class AM_PlayerPawn : DoomPlayer
 {
-	const AMC_ACCELFAC = 0.2;
-
 	protected bool am_deathrolled;
 
 	protected uint am_coyotetime;
@@ -30,6 +28,9 @@ class AM_PlayerPawn : DoomPlayer
 	protected int am_prevwaterlevel;
 	protected bool am_prevbOnMobj;
 	protected double am_prevVelZ;
+
+	protected double am_accelfac;
+	property AccelerationFactor			: am_accelfac;
 
 	int am_maxcoyotetime;
 	property MaxCoyoteTime				: am_maxcoyotetime;
@@ -70,6 +71,12 @@ class AM_PlayerPawn : DoomPlayer
 		Player.ViewHeight 49;
 		Player.GruntSpeed 16;
 		Speed 1.0;
+
+		// How quickly player reaches maximum velocity when they start
+		// moving. Represents how much of maximum velocity is reached
+		// per tic (default 0.2 = ~5 tics to reach maximum velocity).
+		// Valid values are in [0.01, 1.0] range.
+		AM_playerPawn.AccelerationFactor 0.2;
 
 		// Duration of coyote time in tics (starts counting down as soon as
 		// player crosses a ledge):
@@ -329,12 +336,13 @@ class AM_PlayerPawn : DoomPlayer
 					wishvel *= cos(Pitch);
 				}
 
-				wishvel /= AMC_ACCELFAC / (1.0 - friction + AMC_ACCELFAC);
+				am_accelfac = clamp(am_accelfac, 0.01, 1.0);
+				wishvel /= am_accelfac / (1.0 - friction + am_accelfac);
 				wishvel = AM_ApplyAirControl(wishvel);
 
 				// [AA] Finally, modify velocity - not instantly, but
 				// over a very short ramp-up period:
-				vel.xy += (wishvel - vel.xy) * AMC_ACCELFAC;
+				vel.xy += (wishvel - vel.xy) * am_accelfac;
 				//Console.Printf("wishvel %.2f | vel.xy %.2f", wishvel.Length(), vel.xy.Length());
 			}
 
