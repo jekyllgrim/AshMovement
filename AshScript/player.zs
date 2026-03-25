@@ -287,11 +287,12 @@ class AM_PlayerPawn : DoomPlayer
 				sm *= player.crouchfactor;
 			}
 
-			// [AA] If we're on a slippery floor (friction is above default
-			// value), we'll just use default Doom movement: add to velocity,
-			// make player fight against friction. The only difference is
-			// that we're not calling Bob() since we're handling view bob
-			// in a fully custom manner:
+			// [AA] If we're on a slippery or muddy floor (friction is not equal
+			// to default value), we'll just use default Doom movement: add to
+			// velocity - this is way easier than trying to reinvent it, and
+			// there are relatively few sectors overall that use it. 
+			// The only difference from vanilla is that we're not calling Bob()
+			// here since we're handling view bob  in a fully custom manner:
 			if (player.onground && !waterlevel && !bNOGRAVITY && !(friction ~== ORIG_FRICTION))
 			{
 				double forwardmove = fm * movefactor * (35 / TICRATE);
@@ -306,22 +307,22 @@ class AM_PlayerPawn : DoomPlayer
 				}
 			}
 
+			// [AA] In a normal-friction sector or mid-air we're using custom movement:
 			else
 			{
-				// [AA] In a normal-friction sector or mid-air we're using custom movement.
-				// We want to start moving at full intended speed instantly instead of
-				// slowly ramping up, fighting against friction. 
-				// So, calculate intended velocity from the given values
-				// (later velocity will be set explicitly):
+				// [AA] We want to start moving at nearly full speed immediately
+				// instead of slowly ramping up, fighting against friction. 
+				// So, first, calculate intended velocity from the given 
+				// values:
 				Vector2 accel = (fm, -sm) * movefactor  * (35 / TICRATE);
 				Vector2 wishvel = accel / (1.0 - friction);
 				// [AA] rotate to current yaw (facing angle):
 				wishvel = Actor.RotateVector(wishvel, angle);
 				
 				// [AA] Since we're not using ForwardThrust(), this bit is
-				// moved out of it to still allow the player move underwater
+				// moved out of it to still allow underwater movement by
 				// by pressing forward:
-				if ((waterlevel || bNoGravity) && Pitch != 0 && !player.GetClassicFlight())
+				if ((waterlevel || bNoGravity) && !(pitch ~== 0) && !player.GetClassicFlight())
 				{
 					// [AA] Note zpush is calculated from accel, NOT wishvel:
 					double zpush = accel.Length() * sin(Pitch);
@@ -343,7 +344,6 @@ class AM_PlayerPawn : DoomPlayer
 				// [AA] Finally, modify velocity - not instantly, but
 				// over a very short ramp-up period:
 				vel.xy += (wishvel - vel.xy) * am_accelfac;
-				//Console.Printf("wishvel %.2f | vel.xy %.2f", wishvel.Length(), vel.xy.Length());
 			}
 
 			if (player.cheats & CF_REVERTPLEASE)
