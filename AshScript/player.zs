@@ -1,5 +1,12 @@
 class AM_PlayerPawn : DoomPlayer
 {
+	enum EStepMode
+	{
+		AM_STEP_RIGHT,
+		AM_STEP_LEFT,
+		AM_STEP_BOTH,
+	}
+
 	protected bool am_deathrolled;
 
 	protected uint am_coyotetime;
@@ -397,8 +404,10 @@ class AM_PlayerPawn : DoomPlayer
 		// am_prevWeapBobDamp and am_weapBobDamp are calculated in
 		// PlayerThink(), then lerp'd here:
 		double bobdamp = am_prevWeapBobDamp + (am_weapBobDamp - am_prevWeapBobDamp) * ticfrac;
-		bobrange.x = AM_Utils.LinearMap(self.vel.xy.Length(), 0, AM_GetBaseRunVel(), 0, am_weapBobRangeHorz) * bobdamp;
-		bobrange.y = AM_Utils.LinearMap(self.vel.xy.Length(), 0, AM_GetBaseRunVel(), 0, am_weapBobRangeVert) * bobdamp;
+		double horVelLength = self.vel.xy.Length();
+		double baseRunVel = AM_GetBaseRunVel();
+		bobrange.x = AM_Utils.LinearMap(horVelLength, 0, baseRunVel, 0, am_weapBobRangeHorz) * bobdamp;
+		bobrange.y = AM_Utils.LinearMap(horVelLength, 0, baseRunVel, 0, am_weapBobRangeVert) * bobdamp;
 		// deeper downward movement when underwater:
 		if (waterlevel) bobrange.y *= 1.8;
 		// multiply by weapon-specific bobranges:
@@ -418,7 +427,7 @@ class AM_PlayerPawn : DoomPlayer
 			// Faster downward movement to better convey
 			// the weight of the weapon:
 			double t = (sin(bobphase) + 1.0) * 0.5;
-			bob.y = (t ** 2.0) * bobrange.y;
+			bob.y = (t * t) * bobrange.y;
 			if (i == 0)
 			{
 				bob1 = bob;
@@ -575,7 +584,7 @@ class AM_PlayerPawn : DoomPlayer
 			// Low velocity - play footstep sound:
 			if (zvel > -10)
 			{
-				AM_PlayFootstep();
+				AM_PlayFootstep(AM_STEP_BOTH);
 			}
 			// High velocity - play landing sound (ideally this should be
 			// a custom sound separate from *grunt, as opposed to how it
@@ -669,11 +678,11 @@ class AM_PlayerPawn : DoomPlayer
 		// with range and speed based on velocity:
 		bob = sin(am_bobphase) * bobrange;
 		A_SetViewAngle(sin(am_bobphase*0.5) * am_viewBobrangeHorz, SPF_INTERPOLATE);
-
+		
 		// [AA] Play footstep sounds at the end of the bob:
 		if (!waterlevel && cos(am_prevbobphase) > 0 && cos(am_bobphase) <= 0)
 		{
-			AM_PlayFootstep();
+			AM_PlayFootstep(sin(am_bobphase*0.5) > 0? AM_STEP_LEFT : AM_STEP_RIGHT);
 		}
 
 		// [AA] Slight camera dip at the start/end of a jump:
@@ -736,17 +745,30 @@ class AM_PlayerPawn : DoomPlayer
 		attackZOffset = player.viewz - pos.z - height*0.5;
 	}
 
-	virtual void AM_PlayFootstep()
+	virtual void AM_PlayFootstep(EStepMode mode)
 	{
 		let ter = self.GetFloorTerrain();
-		Sound snd;
 		if (ter)
 		{
-			snd = random[fstepsnd](0, 1) == 0? ter.RightStepSound : ter.LeftStepSound;
-			if (!snd) snd = ter.StepSound;
+			Sound snd_R = ter.RightStepSound? ter.RightStepSound : ter.StepSound;
+			Sound snd_L = ter.LeftStepSound? ter.LeftStepSound : snd_R;
+			switch (mode)
+			{
+				case AM_STEP_RIGHT:
+					Console.Printf("Right step");
+					A_StartSound(snd_R, 8, CHANF_OVERLAP);
+					break;
+				case AM_STEP_LEFT:
+					Console.Printf("Left step");
+					A_StartSound(snd_L, 8, CHANF_OVERLAP);
+					break;
+				case AM_STEP_BOTH:
+					Console.Printf("Both steps");
+					A_StartSound(snd_R, 8, CHANF_OVERLAP);
+					A_StartSoundIfNotSame(snd_L, snd_R, 8, CHANF_OVERLAP);
+					break;
+			}
 		}
-
-		A_StartSound(snd, 8, CHANF_OVERLAP);
 	}
 
 	override void DeathThink()
