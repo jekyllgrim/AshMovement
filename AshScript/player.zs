@@ -680,9 +680,16 @@ class AM_PlayerPawn : DoomPlayer
 		A_SetViewAngle(sin(am_bobphase*0.5) * am_viewBobrangeHorz, SPF_INTERPOLATE);
 		
 		// [AA] Play footstep sounds at the end of the bob:
-		if (!waterlevel && cos(am_prevbobphase) > 0 && cos(am_bobphase) <= 0)
+		if (cos(am_prevbobphase) > 0 && cos(am_bobphase) <= 0)
 		{
-			AM_PlayFootstep(sin(am_bobphase*0.5) > 0? AM_STEP_LEFT : AM_STEP_RIGHT);
+			if (!waterlevel)
+			{
+				AM_PlayFootstep(sin(am_bobphase*0.5) > 0? AM_STEP_LEFT : AM_STEP_RIGHT);
+			}
+			else
+			{
+				AM_PlaySwimming();
+			}
 		}
 
 		// [AA] Slight camera dip at the start/end of a jump:
@@ -769,6 +776,11 @@ class AM_PlayerPawn : DoomPlayer
 					break;
 			}
 		}
+	}
+
+	virtual void AM_PlaySwimming()
+	{
+		A_StartSound("*swimstep", 8, CHANF_OVERLAP);
 	}
 
 	override void DeathThink()
