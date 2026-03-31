@@ -13,6 +13,8 @@ class AM_PlayerPawn : DoomPlayer
 	protected uint am_underwaterTime;
 	protected double am_prevbobphase;
 	protected double am_bobphase;
+	protected double am_prevfootstepphase;
+	protected double am_footstepphase;
 	protected double am_weapBobDamp;
 	protected double am_prevWeapBobDamp;
 	protected bool am_blockfootstep;
@@ -43,12 +45,14 @@ class AM_PlayerPawn : DoomPlayer
 	property MaxCoyoteTime				: am_maxcoyotetime;
 
 	double am_maxBobFreq;
+	double am_maxFootstepFreq;
 	double am_landViewDipDist;
 	double am_viewBobRangeVert;
 	double am_viewBobrangeHorz;
 	double am_weapBobRangeHorz;
 	double am_weapBobRangeVert;
 	property MaxBobFrequency			: am_maxBobFreq;
+	property MaxFootstepFrequency		: am_maxFootstepFreq;
 	property LandingViewDipDistance 	: am_landViewDipDist;
 	property VerticalViewBobRange		: am_viewBobRangeVert;
 	property HorizontalViewBobRange		: am_viewBobrangeHorz;
@@ -93,6 +97,11 @@ class AM_PlayerPawn : DoomPlayer
 		// possible speed. Affects both view and weapon bob. Doesn't affect
 		// the range of bobbing:
 		AM_PlayerPawn.MaxBobFrequency 30.0;
+		// Maximum frequency of footstep. If at the default 0.0, footsteps
+		// are perfectly synced with view and weapon bobbing (which is
+		// usually desirable). If this is positive, footsteps will be
+		// calculated separately from view bobbing:
+		AM_PlayerPawn.MaxFootstepFrequency 0.0;
 
 		// Maximum vertical (downward) range of view (not weapon) bobbing:
 		AM_PlayerPawn.VerticalViewBobRange 5.0;
@@ -651,7 +660,7 @@ class AM_PlayerPawn : DoomPlayer
 	override void CalcHeight()
 	{
 		let player = self.player;
-		double bob, bobrange, bobfreq;
+		double bob, bobrange, bobfreq, footstepfreq;
 	
 		// [AA] New view bobbing. This is also used for weapon bobbing
 		// (in contrast to vanilla where it's calculated separately).
@@ -660,8 +669,9 @@ class AM_PlayerPawn : DoomPlayer
 			double hvel = vel.xy.length();
 			double maxvel = AM_GetBaseRunVel();
 			if (waterlevel) hvel *= 0.7;
-			bobfreq = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_maxBobFreq, true);
 			bobrange = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_viewBobRangeVert, true);
+			bobfreq = AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_maxBobFreq, true);
+			footstepfreq = am_maxFootstepFreq <= 0? bobfreq : AM_Utils.LinearMap(hvel, 0, maxvel, 0, am_maxFootstepFreq, true);
 		}
 		else
 		{
@@ -673,6 +683,9 @@ class AM_PlayerPawn : DoomPlayer
 		// changes, avoiding any odd jumps):
 		am_prevbobphase = am_bobphase;
 		am_bobphase += bobfreq;
+		// [AA] Same for footsteps:
+		am_prevfootstepphase = am_footstepphase;
+		am_footstepphase += footstepfreq;
 		
 		// [AA] Slight vertical bobbing and even slighter yaw bobbing,
 		// with range and speed based on velocity:
@@ -680,7 +693,7 @@ class AM_PlayerPawn : DoomPlayer
 		A_SetViewAngle(sin(am_bobphase*0.5) * am_viewBobrangeHorz, SPF_INTERPOLATE);
 		
 		// [AA] Play footstep sounds at the end of the bob:
-		if (cos(am_prevbobphase) > 0 && cos(am_bobphase) <= 0)
+		if (cos(am_prevfootstepphase) > 0 && cos(am_footstepphase) <= 0)
 		{
 			if (!waterlevel)
 			{
