@@ -340,8 +340,11 @@ class AM_PlayerPawn : DoomPlayer
 				// by pressing forward:
 				if ((waterlevel || bNoGravity) && !(pitch ~== 0) && !player.GetClassicFlight())
 				{
-					// [AA] Note zpush is calculated from accel, NOT wishvel:
-					double zpush = accel.Length() * sin(Pitch);
+					// [AA] Note, zpush is calculated from relative forward
+					// velocity (accel.x), NOT real velocity (wishvel).
+					// Only accel.x is used because only forward/backward
+					// momentum is supposed to let us fly/swim up and down.
+					double zpush = accel.x * sin(Pitch);
 					if (waterlevel && waterlevel < 2 && zpush < 0)
 					{
 						zpush = 0;
@@ -775,15 +778,12 @@ class AM_PlayerPawn : DoomPlayer
 			switch (mode)
 			{
 				case AM_STEP_RIGHT:
-					Console.Printf("Right step");
 					A_StartSound(snd_R, 8, CHANF_OVERLAP);
 					break;
 				case AM_STEP_LEFT:
-					Console.Printf("Left step");
 					A_StartSound(snd_L, 8, CHANF_OVERLAP);
 					break;
 				case AM_STEP_BOTH:
-					Console.Printf("Both steps");
 					A_StartSound(snd_R, 8, CHANF_OVERLAP);
 					A_StartSoundIfNotSame(snd_L, snd_R, 8, CHANF_OVERLAP);
 					break;
